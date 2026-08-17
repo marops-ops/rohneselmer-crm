@@ -78,11 +78,11 @@ export async function createUserAccount(
   revalidatePath("/innstillinger");
 }
 
-export async function resendInvite(id: string) {
+export async function resendInvite(id: string): Promise<{ error?: string }> {
   await requireAdmin();
   const db = getDb();
   const [user] = await db.select().from(users).where(eq(users.id, id));
-  if (!user || user.passwordHash) return;
+  if (!user || user.passwordHash) return {};
 
   const inviteToken = generateInviteToken();
   await db
@@ -90,8 +90,16 @@ export async function resendInvite(id: string) {
     .set({ inviteToken, inviteExpiresAt: inviteExpiry() })
     .where(eq(users.id, id));
 
-  await sendInviteEmail(user.email, user.name, inviteToken);
+  try {
+    await sendInviteEmail(user.email, user.name, inviteToken);
+  } catch (err) {
+    console.error("Failed to resend invite email", err);
+    revalidatePath("/innstillinger");
+    return { error: "Kunne ikke sende invitasjons-e-posten. Prøv igjen senere." };
+  }
+
   revalidatePath("/innstillinger");
+  return {};
 }
 
 export async function deleteUserAccount(id: string) {
