@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -41,10 +42,14 @@ export function Nav({ user }: { user: CurrentUser }) {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-[#17284A] backdrop-blur supports-backdrop-filter:bg-[#17284A]/95 dark:bg-background/95 dark:supports-backdrop-filter:bg-background/60">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:px-6">
-        <span className="text-sm font-semibold tracking-tight whitespace-nowrap text-white dark:text-foreground">
-          RøhneSelmer{" "}
-          <span className="font-normal text-white/60 dark:text-muted-foreground">LMS</span>
-        </span>
+        <Image
+          src="/logo.png"
+          alt="RøhneSelmer"
+          width={1946}
+          height={212}
+          priority
+          className="h-7 w-auto shrink-0"
+        />
         <nav className="flex items-center gap-1">
           {links.map((link) => {
             const active =
