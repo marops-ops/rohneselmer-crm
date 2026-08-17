@@ -410,22 +410,42 @@ export async function addLeadNote(
   revalidatePath(`/leads/${leadId}`);
 }
 
+// Stage a manual pipeline move (drag-and-drop / "Flytt til…") is logged as, so it
+// still counts toward the leaderboard's point scoring the same way the guided
+// per-stage actions do.
+const STAGE_ACTIVITY: Partial<Record<Stage, (typeof leadActivities.$inferInsert)["type"]>> = {
+  under_arbeid: "akseptert",
+  for_oppfolging: "tilbud_gitt",
+  kunde_vunnet: "kontrakt_skrevet",
+  bil_levert: "bil_levert",
+  ferdig: "ferdig",
+};
+
 // Kept for the drag-and-drop pipeline board's generic "move to stage" control.
 export async function changeLeadStage(id: string, stage: Stage) {
   const user = await requireUser();
   const db = getDb();
   await db.update(leads).set({ stage, updatedAt: new Date() }).where(eq(leads.id, id));
-  await logActivity(id, "notat", `Flyttet til ${stageLabel(stage)} av ${user.name}.`, user.id);
+  const type = STAGE_ACTIVITY[stage] ?? "notat";
+  await logActivity(id, type, `Flyttet til ${stageLabel(stage)} av ${user.name}.`, user.id);
   revalidateLead(id);
 }
 
-export async function rejectLead(id: string) {
+/** Manual "Tapte kunder" move (drag-and-drop / "Flytt til…" dropdown) — reason required. */
+export async function rejectLead(id: string, reason: string) {
   const user = await requireUser();
   const db = getDb();
+  const now = new Date();
   await db
     .update(leads)
-    .set({ status: "lost", updatedAt: new Date() })
+    .set({
+      status: "lost",
+      lostReason: reason || null,
+      contactOutcomeAt: now,
+      handlingOutcomeAt: now,
+      updatedAt: now,
+    })
     .where(eq(leads.id, id));
-  await logActivity(id, "notat", `Flyttet til Tapte kunder av ${user.name}.`, user.id);
+  await logActivity(id, "ikke_aktuelt", `Tapt (flyttet i pipeline): ${reason}`, user.id);
   revalidateLead(id);
 }

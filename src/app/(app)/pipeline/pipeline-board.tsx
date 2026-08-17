@@ -20,6 +20,7 @@ import { STAGES, type Stage } from "@/lib/pipeline";
 import { formatCurrency, initials } from "@/lib/format";
 import { MoveLeadControl } from "./move-lead-control";
 import { changeLeadStage, rejectLead } from "../leads/actions";
+import { RejectReasonDialog } from "@/components/reject-reason-dialog";
 import { MapPin, Ban } from "lucide-react";
 
 const TAPTE_KUNDER = "tapte_kunder";
@@ -48,6 +49,10 @@ function groupByColumn(leads: PipelineLead[]) {
 export function PipelineBoard({ leads }: { leads: PipelineLead[] }) {
   const [columns, setColumns] = useState(() => groupByColumn(leads));
   const [activeLead, setActiveLead] = useState<PipelineLead | null>(null);
+  const [pendingReject, setPendingReject] = useState<{
+    leadId: string;
+    previousStage: string;
+  } | null>(null);
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -58,18 +63,7 @@ export function PipelineBoard({ leads }: { leads: PipelineLead[] }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
-  function handleDragStart(event: DragStartEvent) {
-    const lead = leads.find((l) => l.id === event.active.id);
-    setActiveLead(lead ?? null);
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    setActiveLead(null);
-    const { active, over } = event;
-    if (!over) return;
-    const leadId = String(active.id);
-    const target = String(over.id);
-
+  function moveCard(leadId: string, targetCol: string, patch: Partial<PipelineLead>) {
     setColumns((prev) => {
       let moving: PipelineLead | undefined;
       const next: Record<string, PipelineLead[]> = {};
@@ -83,13 +77,23 @@ export function PipelineBoard({ leads }: { leads: PipelineLead[] }) {
         });
       }
       if (!moving) return prev;
-      const updated =
-        target === TAPTE_KUNDER
-          ? { ...moving, status: "lost" }
-          : { ...moving, stage: target, status: "active" };
-      next[target] = [updated, ...(next[target] ?? [])];
+      const updated = { ...moving, ...patch };
+      next[targetCol] = [updated, ...(next[targetCol] ?? [])];
       return next;
     });
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    const lead = leads.find((l) => l.id === event.active.id);
+    setActiveLead(lead ?? null);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveLead(null);
+    const { active, over } = event;
+    if (!over) return;
+    const leadId = String(active.id);
+    const target = String(over.id);
 
     const current = leads.find((l) => l.id === leadId);
     if (!current) return;
@@ -97,12 +101,17 @@ export function PipelineBoard({ leads }: { leads: PipelineLead[] }) {
       target === TAPTE_KUNDER ? current.status === "lost" : current.stage === target;
     if (alreadyThere) return;
 
+    if (target === TAPTE_KUNDER) {
+      // Optimistically show the card in "Tapte kunder", but hold off on the
+      // server call until a reason is confirmed — cancelling reverts this.
+      moveCard(leadId, TAPTE_KUNDER, { status: "lost" });
+      setPendingReject({ leadId, previousStage: current.stage });
+      return;
+    }
+
+    moveCard(leadId, target, { stage: target, status: "active" });
     startTransition(() => {
-      if (target === TAPTE_KUNDER) {
-        rejectLead(leadId);
-      } else {
-        changeLeadStage(leadId, target as Stage);
-      }
+      changeLeadStage(leadId, target as Stage);
     });
   }
 
@@ -127,6 +136,24 @@ export function PipelineBoard({ leads }: { leads: PipelineLead[] }) {
       <DragOverlay>
         {activeLead ? <PipelineCardBody lead={activeLead} dragging /> : null}
       </DragOverlay>
+      {pendingReject ? (
+        <RejectReasonDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setPendingReject(null);
+          }}
+          onConfirm={(reason) => {
+            startTransition(() => rejectLead(pendingReject.leadId, reason));
+            setPendingReject(null);
+          }}
+          onCancel={() => {
+            moveCard(pendingReject.leadId, pendingReject.previousStage, {
+              stage: pendingReject.previousStage,
+              status: "active",
+            });
+          }}
+        />
+      ) : null}
     </DndContext>
   );
 }
