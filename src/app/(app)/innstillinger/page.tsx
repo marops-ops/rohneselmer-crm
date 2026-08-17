@@ -26,6 +26,7 @@ import { requireUser } from "@/lib/current-user";
 import { canAccessSettings } from "@/lib/rbac";
 import { LocationFormSheet } from "./location-form";
 import { UserFormSheet } from "./user-form";
+import { ResendInviteButton } from "./resend-invite-button";
 import { deleteLocation, deleteUserAccount } from "./actions";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -175,32 +176,50 @@ export default async function InnstillingerPage() {
                 <TableHead>E-post</TableHead>
                 <TableHead>Rolle</TableHead>
                 <TableHead>Lokasjoner</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="w-0" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {allUsers.map((u) => (
-                <TableRow key={u.id}>
-                  <TableCell className="font-medium">{u.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{u.email}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{ROLE_LABEL[u.role]}</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {u.role === "administrator"
-                      ? "Alle"
-                      : (locationsByUser.get(u.id) ?? []).join(", ") || "—"}
-                  </TableCell>
-                  <TableCell>
-                    {u.id !== user.id ? (
-                      <ConfirmDeleteButton
-                        action={deleteUserAccount.bind(null, u.id)}
-                        itemLabel={u.name}
-                      />
-                    ) : null}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {allUsers.map((u) => {
+                const pendingInvite = !u.passwordHash;
+                return (
+                  <TableRow key={u.id}>
+                    <TableCell className="font-medium">{u.name}</TableCell>
+                    <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{ROLE_LABEL[u.role]}</Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {u.role === "administrator"
+                        ? "Alle"
+                        : (locationsByUser.get(u.id) ?? []).join(", ") || "—"}
+                    </TableCell>
+                    <TableCell>
+                      {pendingInvite ? (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          Venter på aktivering
+                        </Badge>
+                      ) : (
+                        <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                          Aktiv
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {pendingInvite ? <ResendInviteButton userId={u.id} /> : null}
+                        {u.id !== user.id ? (
+                          <ConfirmDeleteButton
+                            action={deleteUserAccount.bind(null, u.id)}
+                            itemLabel={u.name}
+                          />
+                        ) : null}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

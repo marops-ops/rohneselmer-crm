@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual, randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 
 export const SESSION_COOKIE = "rohneselmer_crm_session";
@@ -38,4 +38,8 @@ export async function hashPassword(password: string) {
 
 export async function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
+}
+
+export function generateInviteToken() {
+  return randomBytes(32).toString("hex");
 }

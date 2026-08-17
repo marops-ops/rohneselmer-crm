@@ -4,8 +4,15 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { locations, users, userLocations } from "@/db/schema";
-import { hashPassword } from "@/lib/auth";
+import { generateInviteToken } from "@/lib/auth";
+import { sendInviteEmail } from "@/lib/email";
 import { requireUser } from "@/lib/current-user";
+
+function inviteExpiry() {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  return d;
+}
 
 async function requireAdmin() {
   const user = await requireUser();
@@ -41,25 +48,49 @@ export async function createUserAccount(
   await requireAdmin();
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
   const role = String(formData.get("role") ?? "selger") as "administrator" | "salgsleder" | "selger";
   const locationIds = formData.getAll("locationIds").map(String);
 
-  if (!name || !email || !password) return { error: "Alle felt er påkrevd." };
-  if (password.length < 8) return { error: "Passord må være minst 8 tegn." };
+  if (!name || !email) return { error: "Navn og e-post er påkrevd." };
 
   const db = getDb();
-  const passwordHash = await hashPassword(password);
+  const inviteToken = generateInviteToken();
 
   const [user] = await db
     .insert(users)
-    .values({ name, email, passwordHash, role })
+    .values({ name, email, role, inviteToken, inviteExpiresAt: inviteExpiry() })
     .returning({ id: users.id });
 
   if (locationIds.length > 0) {
     await db.insert(userLocations).values(locationIds.map((locationId) => ({ userId: user.id, locationId })));
   }
 
+  try {
+    await sendInviteEmail(email, name, inviteToken);
+  } catch (err) {
+    console.error("Failed to send invite email", err);
+    return {
+      error:
+        "Bruker ble opprettet, men invitasjons-e-posten kunne ikke sendes. Bruk 'Send invitasjon på nytt'.",
+    };
+  }
+
+  revalidatePath("/innstillinger");
+}
+
+export async function resendInvite(id: string) {
+  await requireAdmin();
+  const db = getDb();
+  const [user] = await db.select().from(users).where(eq(users.id, id));
+  if (!user || user.passwordHash) return;
+
+  const inviteToken = generateInviteToken();
+  await db
+    .update(users)
+    .set({ inviteToken, inviteExpiresAt: inviteExpiry() })
+    .where(eq(users.id, id));
+
+  await sendInviteEmail(user.email, user.name, inviteToken);
   revalidatePath("/innstillinger");
 }
 

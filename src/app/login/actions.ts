@@ -20,7 +20,10 @@ export async function login(_prevState: { error?: string } | undefined, formData
   const db = getDb();
   const [user] = await db.select().from(users).where(eq(users.email, email));
 
-  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+  if (!user || !user.passwordHash) {
+    return { error: "Feil e-post eller passord." };
+  }
+  if (!(await verifyPassword(password, user.passwordHash))) {
     return { error: "Feil e-post eller passord." };
   }
 

@@ -18,6 +18,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetFooter,
   SheetHeader,
   SheetTitle,
@@ -51,6 +52,9 @@ export function UserFormSheet({ locations }: { locations: { id: string; name: st
       <SheetContent className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Ny bruker</SheetTitle>
+          <SheetDescription>
+            Brukeren får en e-post med lenke for å sette sitt eget passord.
+          </SheetDescription>
         </SheetHeader>
         <form action={formAction} className="flex flex-col gap-4 px-4">
           <div className="flex flex-col gap-2">
@@ -60,10 +64,6 @@ export function UserFormSheet({ locations }: { locations: { id: string; name: st
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">E-post</Label>
             <Input id="email" name="email" type="email" required />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="password">Passord</Label>
-            <Input id="password" name="password" type="password" required minLength={8} />
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="role">Rolle</Label>
@@ -100,7 +100,7 @@ export function UserFormSheet({ locations }: { locations: { id: string; name: st
           ) : null}
           <SheetFooter className="px-0">
             <Button type="submit" disabled={pending}>
-              {pending ? "Lagrer…" : "Opprett bruker"}
+              {pending ? "Sender…" : "Send invitasjon"}
             </Button>
           </SheetFooter>
         </form>
