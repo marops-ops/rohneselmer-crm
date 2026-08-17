@@ -1,8 +1,9 @@
 import { eq, asc, and, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
-import { leads, locations, users } from "@/db/schema";
+import { leads, locations, users, contacts } from "@/db/schema";
 import { PipelineBoard } from "./pipeline-board";
 import { LocationPicker } from "./location-picker";
+import { LeadFormSheet } from "../leads/lead-form";
 import { requireUser } from "@/lib/current-user";
 import { generalLeadScope } from "@/lib/rbac";
 
@@ -25,7 +26,7 @@ export default async function PipelinePage({ searchParams }: PageProps<"/pipelin
     conditions.push(inArray(leads.locationId, selectedLocationIds));
   }
 
-  const [rows, allLocations] = await Promise.all([
+  const [rows, allLocations, allContacts] = await Promise.all([
     db
       .select({
         id: leads.id,
@@ -43,6 +44,9 @@ export default async function PipelinePage({ searchParams }: PageProps<"/pipelin
       .where(conditions.length ? and(...conditions) : undefined)
       .orderBy(asc(leads.createdAt)),
     db.select({ id: locations.id, name: locations.name }).from(locations),
+    db
+      .select({ id: contacts.id, firstName: contacts.firstName, lastName: contacts.lastName })
+      .from(contacts),
   ]);
 
   const activeCount = rows.filter((r) => r.status === "active").length;
@@ -61,9 +65,15 @@ export default async function PipelinePage({ searchParams }: PageProps<"/pipelin
             inkludert til Tapte kunder.
           </p>
         </div>
-        {user.role !== "selger" && pickerLocations.length > 1 ? (
-          <LocationPicker locations={pickerLocations} selectedIds={selectedLocationIds} />
-        ) : null}
+        <div className="flex items-center gap-2">
+          {user.role !== "selger" && pickerLocations.length > 1 ? (
+            <LocationPicker locations={pickerLocations} selectedIds={selectedLocationIds} />
+          ) : null}
+          <LeadFormSheet
+            locations={user.role === "administrator" ? allLocations : pickerLocations}
+            contacts={allContacts}
+          />
+        </div>
       </div>
 
       <PipelineBoard leads={rows} />

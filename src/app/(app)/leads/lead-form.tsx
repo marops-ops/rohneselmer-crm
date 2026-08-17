@@ -134,7 +134,7 @@ export function LeadFormSheet({
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="contact">Kunde</Label>
+            <Label htmlFor="contact">Eksisterende kunde</Label>
             <Select name="contactId" defaultValue={lead?.contactId ?? defaultContactId ?? "none"}>
               <SelectTrigger id="contact" className="w-full">
                 <SelectValue placeholder="Ingen kunde" />
@@ -149,6 +149,27 @@ export function LeadFormSheet({
               </SelectContent>
             </Select>
           </div>
+          {!isEdit ? (
+            <div className="flex flex-col gap-3 rounded-lg border border-dashed border-border p-3">
+              <p className="text-xs text-muted-foreground">
+                Ny kunde? Fyll ut her — brukes kun hvis ingen eksisterende kunde er valgt over.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="newContactName">Navn</Label>
+                  <Input id="newContactName" name="newContactName" placeholder="Ola Nordmann" />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="newContactPhone">Telefon</Label>
+                  <Input id="newContactPhone" name="newContactPhone" placeholder="9XX XX XXX" />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="newContactEmail">E-post</Label>
+                <Input id="newContactEmail" name="newContactEmail" type="email" />
+              </div>
+            </div>
+          ) : null}
           <div className="flex flex-col gap-2">
             <Label htmlFor="value">Verdi (kr)</Label>
             <Input id="value" name="value" type="number" min="0" step="1" defaultValue={lead?.value ?? "0"} />
@@ -158,8 +179,8 @@ export function LeadFormSheet({
             <Input
               id="source"
               name="source"
-              placeholder="Nettside, Facebook Lead Ads, ..."
-              defaultValue={lead?.source ?? ""}
+              placeholder="Telefon, E-post, Nettside, Facebook Lead Ads, ..."
+              defaultValue={lead?.source ?? (isEdit ? "" : "Telefon")}
             />
           </div>
           {state?.error ? (

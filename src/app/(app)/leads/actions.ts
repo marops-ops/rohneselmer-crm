@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { leads, leadActivities, reminders } from "@/db/schema";
+import { leads, leadActivities, reminders, contacts } from "@/db/schema";
 import type { Stage } from "@/lib/pipeline";
 import { stageLabel } from "@/lib/pipeline";
 import { requireUser } from "@/lib/current-user";
@@ -55,18 +55,38 @@ export async function createLead(
   const model = fieldOrNull(formData, "model");
   if (!locationId) return { error: "Lokasjon er påkrevd." };
 
+  const db = getDb();
+
+  let contactId = relationIdOrNull(formData, "contactId");
+  const newContactName = fieldOrNull(formData, "newContactName");
+  const newContactPhone = fieldOrNull(formData, "newContactPhone");
+  const newContactEmail = fieldOrNull(formData, "newContactEmail");
+  if (!contactId && (newContactName || newContactPhone || newContactEmail)) {
+    const nameParts = (newContactName ?? "Ukjent kunde").split(/\s+/);
+    const [createdContact] = await db
+      .insert(contacts)
+      .values({
+        firstName: nameParts[0],
+        lastName: nameParts.length > 1 ? nameParts.slice(1).join(" ") : null,
+        phone: newContactPhone,
+        email: newContactEmail,
+      })
+      .returning({ id: contacts.id });
+    contactId = createdContact.id;
+  }
+
   const title =
-    fieldOrNull(formData, "title") ?? (`${brand ?? ""} ${model ?? ""}`.trim() || "Nytt lead");
+    fieldOrNull(formData, "title") ??
+    (`${brand ?? ""} ${model ?? ""}`.trim() || newContactName || "Nytt lead");
 
   const valueRaw = String(formData.get("value") ?? "0").trim();
   const value = valueRaw.length > 0 ? valueRaw : "0";
 
-  const db = getDb();
   const [lead] = await db
     .insert(leads)
     .values({
       title,
-      contactId: relationIdOrNull(formData, "contactId"),
+      contactId,
       locationId,
       brand: brand as (typeof leads.$inferInsert)["brand"],
       model,

@@ -25,21 +25,21 @@ export function ConfirmDeleteButton({
     <AlertDialog>
       <AlertDialogTrigger render={<Button variant="outline" size="sm" />}>
         <Trash2 className="size-4" />
-        Delete
+        Slett
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete {itemLabel}?</AlertDialogTitle>
+          <AlertDialogTitle>Slett {itemLabel}?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete {itemLabel}
-            {" "}and remove associated records.
+            Denne handlingen kan ikke angres. {itemLabel} og tilknyttede data blir permanent
+            slettet.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>Avbryt</AlertDialogCancel>
           <form action={action}>
             <AlertDialogAction type="submit" variant="destructive">
-              Delete
+              Slett
             </AlertDialogAction>
           </form>
         </AlertDialogFooter>

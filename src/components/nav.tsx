@@ -39,10 +39,11 @@ export function Nav({ user }: { user: CurrentUser }) {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <header className="sticky top-0 z-40 border-b border-border bg-[#17284A] backdrop-blur supports-backdrop-filter:bg-[#17284A]/95 dark:bg-background/95 dark:supports-backdrop-filter:bg-background/60">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:px-6">
-        <span className="text-sm font-semibold tracking-tight whitespace-nowrap">
-          RøhneSelmer <span className="text-muted-foreground font-normal">LMS</span>
+        <span className="text-sm font-semibold tracking-tight whitespace-nowrap text-white dark:text-foreground">
+          RøhneSelmer{" "}
+          <span className="font-normal text-white/60 dark:text-muted-foreground">LMS</span>
         </span>
         <nav className="flex items-center gap-1">
           {links.map((link) => {
@@ -56,8 +57,8 @@ export function Nav({ user }: { user: CurrentUser }) {
                 className={cn(
                   "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                   active
-                    ? "bg-secondary text-secondary-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                    ? "bg-white/15 text-white dark:bg-secondary dark:text-secondary-foreground"
+                    : "text-white/65 hover:bg-white/10 hover:text-white dark:text-muted-foreground dark:hover:bg-secondary/50 dark:hover:text-foreground"
                 )}
               >
                 <Icon className="size-4" />
@@ -67,15 +68,25 @@ export function Nav({ user }: { user: CurrentUser }) {
           })}
         </nav>
         <div className="ml-auto flex items-center gap-3">
-          <ThemeToggle />
+          <ThemeToggle className="text-white/80 hover:bg-white/10 hover:text-white dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground" />
           <div className="hidden flex-col items-end sm:flex">
-            <span className="text-sm font-medium leading-tight">{user.name}</span>
-            <Badge variant="outline" className="text-[10px] leading-none">
+            <span className="text-sm font-medium leading-tight text-white dark:text-foreground">
+              {user.name}
+            </span>
+            <Badge
+              variant="outline"
+              className="border-white/25 text-[10px] leading-none text-white/80 dark:border-border dark:text-foreground"
+            >
               {ROLE_LABEL[user.role]}
             </Badge>
           </div>
           <form action={logout}>
-            <Button variant="ghost" size="sm" type="submit">
+            <Button
+              variant="ghost"
+              size="sm"
+              type="submit"
+              className="text-white/80 hover:bg-white/10 hover:text-white dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground"
+            >
               <LogOut className="size-4" />
               Logg ut
             </Button>
