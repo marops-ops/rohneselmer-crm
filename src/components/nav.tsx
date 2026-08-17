@@ -60,13 +60,13 @@ export function Nav({ user }: { user: CurrentUser }) {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                  "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                   active
                     ? "bg-white/15 text-white dark:bg-secondary dark:text-secondary-foreground"
                     : "text-white/65 hover:bg-white/10 hover:text-white dark:text-muted-foreground dark:hover:bg-secondary/50 dark:hover:text-foreground"
                 )}
               >
-                <Icon className="size-3.5" />
+                <Icon className="size-4" />
                 {link.label}
               </Link>
             );

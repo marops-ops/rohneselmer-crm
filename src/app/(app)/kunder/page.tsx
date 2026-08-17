@@ -20,7 +20,8 @@ import {
 import { Contact as ContactIcon, XCircle } from "lucide-react";
 import { ContactFormSheet } from "./contact-form";
 import { CustomerSearch } from "./customer-search";
-import { CustomerListTabs, CUSTOMER_LISTS, type CustomerListKey } from "./customer-list-tabs";
+import { CustomerListTabs } from "./customer-list-tabs";
+import { CUSTOMER_LISTS, type CustomerListKey } from "./customer-lists";
 import { requireUser } from "@/lib/current-user";
 import { generalLeadScope } from "@/lib/rbac";
 import { formatCurrency, formatDate } from "@/lib/format";

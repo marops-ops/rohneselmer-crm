@@ -3,15 +3,7 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-export const CUSTOMER_LISTS = [
-  { value: "alle", label: "Alle kunder" },
-  { value: "vunnet", label: "Vunnet" },
-  { value: "tapt-finansiering", label: "Tapt – Ikke finansiering" },
-  { value: "tapt-konkurrent", label: "Tapt – Konkurrent" },
-] as const;
-
-export type CustomerListKey = (typeof CUSTOMER_LISTS)[number]["value"];
+import { CUSTOMER_LISTS, type CustomerListKey } from "./customer-lists";
 
 export function CustomerListTabs({ active }: { active: CustomerListKey }) {
   const router = useRouter();
