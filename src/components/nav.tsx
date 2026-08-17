@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { logout } from "@/app/login/actions";
 import type { CurrentUser } from "@/lib/current-user";
 import {
@@ -66,6 +67,7 @@ export function Nav({ user }: { user: CurrentUser }) {
           })}
         </nav>
         <div className="ml-auto flex items-center gap-3">
+          <ThemeToggle />
           <div className="hidden flex-col items-end sm:flex">
             <span className="text-sm font-medium leading-tight">{user.name}</span>
             <Badge variant="outline" className="text-[10px] leading-none">

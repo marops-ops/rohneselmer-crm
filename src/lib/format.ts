@@ -1,15 +1,15 @@
 export function formatCurrency(value: string | number) {
   const num = typeof value === "string" ? Number(value) : value;
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("nb-NO", {
     style: "currency",
-    currency: "USD",
+    currency: "NOK",
     maximumFractionDigits: 0,
   }).format(num || 0);
 }
 
 export function formatDate(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("nb-NO", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -18,7 +18,7 @@ export function formatDate(date: Date | string) {
 
 export function formatDateTime(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("nb-NO", {
     month: "short",
     day: "numeric",
     hour: "numeric",

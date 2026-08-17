@@ -180,6 +180,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
           <Button
             variant="outline"
             size="sm"
+            nativeButton={false}
             render={<a href={`/api/export/leads?${exportParams.toString()}`} />}
           >
             <Download className="size-4" />
