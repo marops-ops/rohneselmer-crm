@@ -48,7 +48,7 @@ export function Nav({ user }: { user: CurrentUser }) {
           width={1946}
           height={212}
           priority
-          className="h-7 w-auto shrink-0"
+          className="h-3.5 w-auto shrink-0"
         />
         <nav className="flex items-center gap-1">
           {links.map((link) => {
