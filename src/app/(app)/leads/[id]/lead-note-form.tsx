@@ -21,7 +21,7 @@ export function LeadNoteForm({ leadId }: { leadId: string }) {
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-2">
       <input type="hidden" name="leadId" value={leadId} />
-      <Textarea name="body" placeholder="Add a note…" rows={2} required />
+      <Textarea name="body" placeholder="Legg til et notat…" rows={2} required />
       {state?.error ? (
         <Alert variant="destructive">
           <AlertDescription>{state.error}</AlertDescription>
@@ -29,7 +29,7 @@ export function LeadNoteForm({ leadId }: { leadId: string }) {
       ) : null}
       <div className="flex justify-end">
         <Button type="submit" size="sm" disabled={pending}>
-          {pending ? "Adding…" : "Add note"}
+          {pending ? "Legger til…" : "Legg til notat"}
         </Button>
       </div>
     </form>

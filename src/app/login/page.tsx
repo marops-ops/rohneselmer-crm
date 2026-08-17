@@ -21,18 +21,28 @@ export default function LoginPage() {
     <div className="flex min-h-svh items-center justify-center bg-background p-6">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-xl">Inflate AI CRM</CardTitle>
-          <CardDescription>Enter the shared password to continue.</CardDescription>
+          <CardTitle className="text-xl">RøhneSelmer LMS</CardTitle>
+          <CardDescription>Logg inn med din e-post og ditt passord.</CardDescription>
         </CardHeader>
         <CardContent>
           <form action={formAction} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="email">E-post</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoFocus
+                required
+                autoComplete="username"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="password">Passord</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
-                autoFocus
                 required
                 autoComplete="current-password"
               />
@@ -43,7 +53,7 @@ export default function LoginPage() {
               </Alert>
             ) : null}
             <Button type="submit" className="w-full" disabled={pending}>
-              {pending ? "Signing in…" : "Sign in"}
+              {pending ? "Logger inn…" : "Logg inn"}
             </Button>
           </form>
         </CardContent>

@@ -23,111 +23,124 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { STAGES } from "@/lib/pipeline";
+import { BRANDS, MODELS_BY_BRAND, type VehicleBrand } from "@/lib/vehicles";
 
 type Lead = {
   id: string;
   title: string;
   contactId: string | null;
-  companyId: string | null;
-  stage: string;
+  locationId: string;
+  brand: string | null;
+  model: string | null;
   value: string;
   source: string | null;
-  owner: string | null;
 };
 
 export function LeadFormSheet({
   lead,
-  companies,
+  locations,
   contacts,
-  defaultCompanyId,
+  defaultLocationId,
   defaultContactId,
   defaultOpen,
 }: {
   lead?: Lead;
-  companies: { id: string; name: string }[];
+  locations: { id: string; name: string }[];
   contacts: { id: string; firstName: string; lastName: string | null }[];
-  defaultCompanyId?: string;
+  defaultLocationId?: string;
   defaultContactId?: string;
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(Boolean(defaultOpen));
+  const [brand, setBrand] = useState<string>(lead?.brand ?? "");
   const action = lead ? updateLead : createLead;
   const [state, formAction, pending] = useActionState(action, undefined);
   const isEdit = Boolean(lead);
+  const models = brand && brand in MODELS_BY_BRAND ? MODELS_BY_BRAND[brand as VehicleBrand] : [];
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger render={<Button variant={isEdit ? "outline" : "default"} />}>
         {isEdit ? <Pencil className="size-4" /> : <Plus className="size-4" />}
-        {isEdit ? "Edit" : "New lead"}
+        {isEdit ? "Rediger" : "Nytt lead"}
       </SheetTrigger>
       <SheetContent className="overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{isEdit ? "Edit lead" : "New lead"}</SheetTitle>
+          <SheetTitle>{isEdit ? "Rediger lead" : "Nytt lead"}</SheetTitle>
           <SheetDescription>
-            {isEdit ? "Update this lead's details." : "Add a new lead to the pipeline."}
+            {isEdit ? "Oppdater informasjon om leaden." : "Registrer et nytt lead manuelt."}
           </SheetDescription>
         </SheetHeader>
         <form action={formAction} className="flex flex-col gap-4 px-4">
           {isEdit ? <input type="hidden" name="id" value={lead!.id} /> : null}
           <div className="flex flex-col gap-2">
-            <Label htmlFor="title">Lead title</Label>
+            <Label htmlFor="title">Tittel</Label>
             <Input
               id="title"
               name="title"
-              required
-              placeholder="e.g. Website redesign for Acme"
+              placeholder="Genereres automatisk om tom"
               defaultValue={lead?.title}
             />
           </div>
-          {!isEdit ? (
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="stage">Starting stage</Label>
-              <Select name="stage" defaultValue={lead?.stage ?? "new"}>
-                <SelectTrigger id="stage" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STAGES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : null}
           <div className="flex flex-col gap-2">
-            <Label htmlFor="company">Company</Label>
+            <Label htmlFor="location">Lokasjon</Label>
             <Select
-              name="companyId"
-              defaultValue={lead?.companyId ?? defaultCompanyId ?? "none"}
+              name="locationId"
+              defaultValue={lead?.locationId ?? defaultLocationId}
+              required
             >
-              <SelectTrigger id="company" className="w-full">
-                <SelectValue placeholder="No company" />
+              <SelectTrigger id="location" className="w-full">
+                <SelectValue placeholder="Velg lokasjon" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No company</SelectItem>
-                {companies.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
+                {locations.map((l) => (
+                  <SelectItem key={l.id} value={l.id}>
+                    {l.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="brand">Merke</Label>
+              <Select name="brand" value={brand} onValueChange={(v) => setBrand(v ?? "")}>
+                <SelectTrigger id="brand" className="w-full">
+                  <SelectValue placeholder="Velg merke" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BRANDS.map((b) => (
+                    <SelectItem key={b} value={b}>
+                      {b}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="model">Modell</Label>
+              <Select name="model" defaultValue={lead?.model ?? undefined} disabled={!brand}>
+                <SelectTrigger id="model" className="w-full">
+                  <SelectValue placeholder="Velg modell" />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {m}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="contact">Contact</Label>
-            <Select
-              name="contactId"
-              defaultValue={lead?.contactId ?? defaultContactId ?? "none"}
-            >
+            <Label htmlFor="contact">Kunde</Label>
+            <Select name="contactId" defaultValue={lead?.contactId ?? defaultContactId ?? "none"}>
               <SelectTrigger id="contact" className="w-full">
-                <SelectValue placeholder="No contact" />
+                <SelectValue placeholder="Ingen kunde" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No contact</SelectItem>
+                <SelectItem value="none">Ingen kunde</SelectItem>
                 {contacts.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.firstName} {c.lastName ?? ""}
@@ -137,28 +150,17 @@ export function LeadFormSheet({
             </Select>
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="value">Deal value (USD)</Label>
-            <Input
-              id="value"
-              name="value"
-              type="number"
-              min="0"
-              step="1"
-              defaultValue={lead?.value ?? "0"}
-            />
+            <Label htmlFor="value">Verdi (kr)</Label>
+            <Input id="value" name="value" type="number" min="0" step="1" defaultValue={lead?.value ?? "0"} />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="source">Source</Label>
+            <Label htmlFor="source">Kilde</Label>
             <Input
               id="source"
               name="source"
-              placeholder="e.g. Referral, Website, Outbound"
+              placeholder="Nettside, Facebook Lead Ads, ..."
               defaultValue={lead?.source ?? ""}
             />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="owner">Owner</Label>
-            <Input id="owner" name="owner" defaultValue={lead?.owner ?? ""} />
           </div>
           {state?.error ? (
             <Alert variant="destructive">
@@ -167,7 +169,7 @@ export function LeadFormSheet({
           ) : null}
           <SheetFooter className="px-0">
             <Button type="submit" disabled={pending}>
-              {pending ? "Saving…" : isEdit ? "Save changes" : "Create lead"}
+              {pending ? "Lagrer…" : isEdit ? "Lagre endringer" : "Opprett lead"}
             </Button>
           </SheetFooter>
         </form>

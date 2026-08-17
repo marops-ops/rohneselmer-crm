@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { stageLabel, stageColor } from "@/lib/pipeline";
+import { stageLabel, stageColor, STATUS_LABEL } from "@/lib/pipeline";
 import { cn } from "@/lib/utils";
 
 export function StageBadge({ stage }: { stage: string }) {
@@ -21,14 +21,13 @@ export function StageBadge({ stage }: { stage: string }) {
 
 const STATUS_STYLES: Record<string, string> = {
   active: "bg-secondary text-secondary-foreground border-border",
-  won: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
   lost: "bg-red-500/15 text-red-400 border-red-500/20",
 };
 
 export function StatusBadge({ status }: { status: string }) {
   return (
-    <Badge variant="outline" className={cn("border capitalize", STATUS_STYLES[status])}>
-      {status}
+    <Badge variant="outline" className={cn("border", STATUS_STYLES[status])}>
+      {STATUS_LABEL[status] ?? status}
     </Badge>
   );
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { desc, eq, and } from "drizzle-orm";
 import { getDb } from "@/db";
-import { leads, companies, contacts } from "@/db/schema";
+import { leads, locations, contacts } from "@/db/schema";
 import {
   Card,
   CardContent,
@@ -23,21 +23,24 @@ import { StageBadge, StatusBadge } from "@/components/stage-badge";
 import { formatCurrency } from "@/lib/format";
 import { STAGES } from "@/lib/pipeline";
 import { cn } from "@/lib/utils";
+import { requireUser } from "@/lib/current-user";
+import { generalLeadScope } from "@/lib/rbac";
 
-export default async function LeadsPage({
-  searchParams,
-}: PageProps<"/leads">) {
-  const { companyId, contactId, stage } = await searchParams;
+export default async function LeadsPage({ searchParams }: PageProps<"/leads">) {
+  const { locationId, contactId, stage } = await searchParams;
   const stageFilter = typeof stage === "string" ? stage : undefined;
-  const prefillCompanyId = typeof companyId === "string" ? companyId : undefined;
+  const prefillLocationId = typeof locationId === "string" ? locationId : undefined;
   const prefillContactId = typeof contactId === "string" ? contactId : undefined;
 
+  const user = await requireUser();
   const db = getDb();
 
   const conditions = [];
+  const scope = generalLeadScope(user);
+  if (scope) conditions.push(scope);
   if (stageFilter) conditions.push(eq(leads.stage, stageFilter as (typeof STAGES)[number]["value"]));
 
-  const [rows, allCompanies, allContacts] = await Promise.all([
+  const [rows, allLocations, allContacts] = await Promise.all([
     db
       .select({
         id: leads.id,
@@ -45,15 +48,14 @@ export default async function LeadsPage({
         stage: leads.stage,
         status: leads.status,
         value: leads.value,
-        owner: leads.owner,
-        companyName: companies.name,
+        locationName: locations.name,
         createdAt: leads.createdAt,
       })
       .from(leads)
-      .leftJoin(companies, eq(leads.companyId, companies.id))
+      .leftJoin(locations, eq(leads.locationId, locations.id))
       .where(conditions.length ? and(...conditions) : undefined)
       .orderBy(desc(leads.createdAt)),
-    db.select({ id: companies.id, name: companies.name }).from(companies),
+    db.select({ id: locations.id, name: locations.name }).from(locations),
     db
       .select({ id: contacts.id, firstName: contacts.firstName, lastName: contacts.lastName })
       .from(contacts),
@@ -64,16 +66,14 @@ export default async function LeadsPage({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-          <p className="text-sm text-muted-foreground">
-            Every opportunity currently in motion.
-          </p>
+          <p className="text-sm text-muted-foreground">Alle leads du har tilgang til.</p>
         </div>
         <LeadFormSheet
-          companies={allCompanies}
+          locations={allLocations}
           contacts={allContacts}
-          defaultCompanyId={prefillCompanyId}
+          defaultLocationId={prefillLocationId}
           defaultContactId={prefillContactId}
-          defaultOpen={Boolean(prefillCompanyId || prefillContactId)}
+          defaultOpen={Boolean(prefillLocationId || prefillContactId)}
         />
       </div>
 
@@ -87,7 +87,7 @@ export default async function LeadsPage({
               : "border-border text-muted-foreground hover:text-foreground"
           )}
         >
-          All stages
+          Alle stadier
         </Link>
         {STAGES.map((s) => (
           <Link
@@ -107,24 +107,23 @@ export default async function LeadsPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>All leads</CardTitle>
-          <CardDescription>{rows.length} total</CardDescription>
+          <CardTitle>Alle leads</CardTitle>
+          <CardDescription>{rows.length} totalt</CardDescription>
         </CardHeader>
         <CardContent>
           {rows.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-muted-foreground">
               <Users className="size-8" />
-              <p className="text-sm">No leads yet. Add your first one to get started.</p>
+              <p className="text-sm">Ingen leads ennå.</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Stage</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead className="text-right">Value</TableHead>
+                  <TableHead>Tittel</TableHead>
+                  <TableHead>Lokasjon</TableHead>
+                  <TableHead>Stadium</TableHead>
+                  <TableHead className="text-right">Verdi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -136,7 +135,7 @@ export default async function LeadsPage({
                       </Link>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {row.companyName ?? "—"}
+                      {row.locationName ?? "—"}
                     </TableCell>
                     <TableCell>
                       {row.status === "active" ? (
@@ -145,7 +144,6 @@ export default async function LeadsPage({
                         <StatusBadge status={row.status} />
                       )}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{row.owner ?? "—"}</TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCurrency(row.value)}
                     </TableCell>

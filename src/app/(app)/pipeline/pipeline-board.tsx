@@ -18,11 +18,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { STAGES, type Stage } from "@/lib/pipeline";
 import { formatCurrency, initials } from "@/lib/format";
-import { LeadStageControl } from "../leads/[id]/lead-stage-control";
+import { MoveLeadControl } from "./move-lead-control";
 import { changeLeadStage, rejectLead } from "../leads/actions";
-import { Building2, Ban } from "lucide-react";
+import { MapPin, Ban } from "lucide-react";
 
-const REJECTED = "rejected";
+const TAPTE_KUNDER = "tapte_kunder";
 
 type PipelineLead = {
   id: string;
@@ -30,15 +30,16 @@ type PipelineLead = {
   stage: string;
   status: string;
   value: string;
-  owner: string | null;
-  companyName: string | null;
+  brand: string | null;
+  sellerName: string | null;
+  locationName: string | null;
 };
 
 function groupByColumn(leads: PipelineLead[]) {
-  const groups: Record<string, PipelineLead[]> = { [REJECTED]: [] };
+  const groups: Record<string, PipelineLead[]> = { [TAPTE_KUNDER]: [] };
   for (const stage of STAGES) groups[stage.value] = [];
   for (const lead of leads) {
-    if (lead.status === "lost") groups[REJECTED].push(lead);
+    if (lead.status === "lost") groups[TAPTE_KUNDER].push(lead);
     else groups[lead.stage]?.push(lead);
   }
   return groups;
@@ -83,9 +84,9 @@ export function PipelineBoard({ leads }: { leads: PipelineLead[] }) {
       }
       if (!moving) return prev;
       const updated =
-        target === REJECTED
+        target === TAPTE_KUNDER
           ? { ...moving, status: "lost" }
-          : { ...moving, stage: target, status: target === "won" ? "won" : "active" };
+          : { ...moving, stage: target, status: "active" };
       next[target] = [updated, ...(next[target] ?? [])];
       return next;
     });
@@ -93,11 +94,11 @@ export function PipelineBoard({ leads }: { leads: PipelineLead[] }) {
     const current = leads.find((l) => l.id === leadId);
     if (!current) return;
     const alreadyThere =
-      target === REJECTED ? current.status === "lost" : current.stage === target;
+      target === TAPTE_KUNDER ? current.status === "lost" : current.stage === target;
     if (alreadyThere) return;
 
     startTransition(() => {
-      if (target === REJECTED) {
+      if (target === TAPTE_KUNDER) {
         rejectLead(leadId);
       } else {
         changeLeadStage(leadId, target as Stage);
@@ -107,7 +108,7 @@ export function PipelineBoard({ leads }: { leads: PipelineLead[] }) {
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-7">
         {STAGES.map((stage) => (
           <PipelineColumn
             key={stage.value}
@@ -117,9 +118,9 @@ export function PipelineBoard({ leads }: { leads: PipelineLead[] }) {
           />
         ))}
         <PipelineColumn
-          columnId={REJECTED}
-          label="Rejected"
-          leads={columns[REJECTED] ?? []}
+          columnId={TAPTE_KUNDER}
+          label="Tapte kunder"
+          leads={columns[TAPTE_KUNDER] ?? []}
           muted
         />
       </div>
@@ -165,7 +166,7 @@ function PipelineColumn({
         {leads.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="py-6 text-center text-xs text-muted-foreground">
-              {muted ? "Drag a lead here to reject it" : "No leads"}
+              {muted ? "Dra et lead hit for å avslutte" : "Ingen leads"}
             </CardContent>
           </Card>
         ) : (
@@ -213,10 +214,11 @@ function PipelineCardBody({
     >
       <CardHeader className="px-3">
         <p className="text-sm font-medium">{lead.title}</p>
-        {lead.companyName ? (
+        {lead.locationName ? (
           <p className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Building2 className="size-3" />
-            {lead.companyName}
+            <MapPin className="size-3" />
+            {lead.locationName}
+            {lead.brand ? ` · ${lead.brand}` : ""}
           </p>
         ) : null}
       </CardHeader>
@@ -227,12 +229,12 @@ function PipelineCardBody({
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          {lead.owner ? (
+          {lead.sellerName ? (
             <Avatar className="size-6">
-              <AvatarFallback className="text-[10px]">{initials(lead.owner)}</AvatarFallback>
+              <AvatarFallback className="text-[10px]">{initials(lead.sellerName)}</AvatarFallback>
             </Avatar>
           ) : null}
-          {!rejected ? <LeadStageControl leadId={lead.id} stage={lead.stage} /> : null}
+          {!rejected ? <MoveLeadControl leadId={lead.id} stage={lead.stage} /> : null}
         </div>
       </CardContent>
     </Card>

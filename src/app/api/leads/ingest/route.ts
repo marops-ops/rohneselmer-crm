@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { ilike } from "drizzle-orm";
 import { getDb } from "@/db";
-import { companies, contacts, leads, leadActivities } from "@/db/schema";
+import { contacts, leads, leadActivities, locations } from "@/db/schema";
+import { BRANDS } from "@/lib/vehicles";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -76,9 +77,11 @@ export async function POST(request: Request) {
 
   const email = pick(body, ["email", "email_address"]);
   const phone = pick(body, ["phone", "phone_number", "telephone"]);
-  const companyName = pick(body, ["company", "company_name", "organization"]);
+  const locationName = pick(body, ["location", "forhandler", "dealer"]);
+  const brandRaw = pick(body, ["brand", "merke"]);
+  const model = pick(body, ["model", "modell"]);
   const message = pick(body, ["message", "notes", "comments", "inquiry"]);
-  const source = pick(body, ["source"]) ?? "Website";
+  const source = pick(body, ["source"]) ?? "Nettside";
   const titleOverride = pick(body, ["subject", "title"]);
 
   if (!firstName && !email && !phone) {
@@ -87,26 +90,32 @@ export async function POST(request: Request) {
       { status: 400, headers: CORS_HEADERS }
     );
   }
+  if (!locationName) {
+    return NextResponse.json(
+      { error: "A 'location' field matching a dealership location name is required." },
+      { status: 400, headers: CORS_HEADERS }
+    );
+  }
 
   const db = getDb();
 
-  let companyId: string | null = null;
-  if (companyName) {
-    const [existingCompany] = await db
-      .select({ id: companies.id })
-      .from(companies)
-      .where(ilike(companies.name, companyName))
-      .limit(1);
-    if (existingCompany) {
-      companyId = existingCompany.id;
-    } else {
-      const [createdCompany] = await db
-        .insert(companies)
-        .values({ name: companyName })
-        .returning({ id: companies.id });
-      companyId = createdCompany.id;
-    }
+  const [location] = await db
+    .select({ id: locations.id })
+    .from(locations)
+    .where(ilike(locations.name, `%${locationName}%`))
+    .limit(1);
+
+  if (!location) {
+    return NextResponse.json(
+      { error: `No matching location found for "${locationName}".` },
+      { status: 400, headers: CORS_HEADERS }
+    );
   }
+
+  const brand = brandRaw
+    ? (BRANDS as readonly string[]).find((b) => b.toLowerCase() === brandRaw.toLowerCase()) ??
+      "Annet"
+    : null;
 
   let contactId: string | null = null;
   if (email) {
@@ -121,33 +130,36 @@ export async function POST(request: Request) {
     const [createdContact] = await db
       .insert(contacts)
       .values({
-        firstName: firstName ?? email ?? phone ?? "Unknown",
+        firstName: firstName ?? email ?? phone ?? "Ukjent",
         lastName,
         email,
         phone,
-        companyId,
       })
       .returning({ id: contacts.id });
     contactId = createdContact.id;
   }
 
-  const leadTitle = titleOverride ?? `Website inquiry — ${firstName ?? email ?? phone}`;
+  const leadTitle =
+    titleOverride ??
+    (`${brand ?? ""} ${model ?? ""}`.trim() || `Lead — ${firstName ?? email ?? phone}`);
 
   const [lead] = await db
     .insert(leads)
     .values({
       title: leadTitle,
       contactId,
-      companyId,
-      stage: "new",
+      locationId: location.id,
+      brand: brand as (typeof leads.$inferInsert)["brand"],
+      model,
+      stage: "nye",
       source,
     })
     .returning({ id: leads.id });
 
   await db.insert(leadActivities).values({
     leadId: lead.id,
-    type: "created",
-    body: message ? `Submitted via ${source}: "${message}"` : `Submitted via ${source}.`,
+    type: "opprettet",
+    body: message ? `Mottatt via ${source}: "${message}"` : `Mottatt via ${source}.`,
   });
 
   return NextResponse.json(

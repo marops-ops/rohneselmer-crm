@@ -21,7 +21,7 @@ export async function createContact(
   formData: FormData
 ) {
   const firstName = String(formData.get("firstName") ?? "").trim();
-  if (!firstName) return { error: "First name is required." };
+  if (!firstName) return { error: "Fornavn er påkrevd." };
 
   const db = getDb();
   const [contact] = await db
@@ -31,14 +31,11 @@ export async function createContact(
       lastName: fieldOrNull(formData, "lastName"),
       email: fieldOrNull(formData, "email"),
       phone: fieldOrNull(formData, "phone"),
-      jobTitle: fieldOrNull(formData, "jobTitle"),
-      companyId: relationIdOrNull(formData, "companyId"),
       notes: fieldOrNull(formData, "notes"),
     })
     .returning({ id: contacts.id });
 
-  revalidatePath("/contacts");
-  revalidatePath("/companies");
+  revalidatePath("/kunder");
 
   const leadId = relationIdOrNull(formData, "leadId");
   if (leadId) {
@@ -48,7 +45,7 @@ export async function createContact(
     redirect(`/leads/${leadId}`);
   }
 
-  redirect(`/contacts/${contact.id}`);
+  redirect(`/kunder/${contact.id}`);
 }
 
 export async function updateContact(
@@ -57,8 +54,8 @@ export async function updateContact(
 ) {
   const id = String(formData.get("id") ?? "");
   const firstName = String(formData.get("firstName") ?? "").trim();
-  if (!id) return { error: "Missing contact id." };
-  if (!firstName) return { error: "First name is required." };
+  if (!id) return { error: "Mangler kunde-id." };
+  if (!firstName) return { error: "Fornavn er påkrevd." };
 
   const db = getDb();
   await db
@@ -68,22 +65,18 @@ export async function updateContact(
       lastName: fieldOrNull(formData, "lastName"),
       email: fieldOrNull(formData, "email"),
       phone: fieldOrNull(formData, "phone"),
-      jobTitle: fieldOrNull(formData, "jobTitle"),
-      companyId: relationIdOrNull(formData, "companyId"),
       notes: fieldOrNull(formData, "notes"),
     })
     .where(eq(contacts.id, id));
 
-  revalidatePath("/contacts");
-  revalidatePath(`/contacts/${id}`);
-  revalidatePath("/companies");
-  redirect(`/contacts/${id}`);
+  revalidatePath("/kunder");
+  revalidatePath(`/kunder/${id}`);
+  redirect(`/kunder/${id}`);
 }
 
 export async function deleteContact(id: string) {
   const db = getDb();
   await db.delete(contacts).where(eq(contacts.id, id));
-  revalidatePath("/contacts");
-  revalidatePath("/companies");
-  redirect("/contacts");
+  revalidatePath("/kunder");
+  redirect("/kunder");
 }
